@@ -1,10 +1,11 @@
 # Package
 
 version       = "0.1.0"
-author        = "ai8194"
+author        = "idakandrew"
 description   = "silicide: silicon-level circuits"
 license       = "GPL-3.0-or-later"
 srcDir        = "src"
+binDir        = "bin"
 bin           = @["silicide"]
 
 
