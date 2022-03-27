@@ -5,16 +5,15 @@ import
 if init() == 0:
     quit("Failed to Initialize GLFW.")
 
+let videoMode = getVideoMode(getPrimaryMonitor())
+
 windowHint(SAMPLES, 8)
-windowSize = ivec2(1920, 1080)
-window = createWindow(windowSize.x, windowSize.y, "Silicide", nil, nil)
+windowSize = ivec2(videoMode.width, videoMode.height)
+window = createWindow(windowSize.x, windowSize.y, "silicide", getPrimaryMonitor(), nil)
 
 makeContextCurrent(window)
 loadExtensions()
 glDrawBuffer(GL_FRONT)
-
-let bxy* = newBoxy()
-bxy.addImage("sqr", readImage("square.png"))
 
 #------------------------------------------------------------------------------
 
@@ -58,17 +57,16 @@ bxy.loadFont()
 proc drawText*(bxy: Boxy, str: string, xpos, ypos: float, scale = vec2(1, 1)) =
     let chars = toSeq str
     let temp = font.typeset(str)
-    let width = temp.computeBounds.x
-    let height = temp.computeBounds.y
-    let scaleAdj = vec2(scale.x * windowSize.x.float / 1920, scale.y * windowSize.y.float / 1080)
-    let xposAdj = xpos - width * scaleAdj.x / 2
+    let width = temp.layoutBounds.x
+    let height = temp.layoutBounds.y
+    let xposAdj = xpos - width / 2
 
     for idx, c in chars:
         bxy.drawImCAST(
             $c, 
             vec2(
-                xposAdj + temp.positions[idx].x * scaleAdj.x + bxy.getImageSize($c).x.float * scaleAdj.x / 2, 
-                ypos - height * scaleAdj.y / 2 + bxy.getImageSize($c).y.float * scaleAdj.y / 2
+                xposAdj + temp.positions[idx].x + bxy.getImageSize($c).x.float / 2, 
+                ypos - height / 2 + bxy.getImageSize($c).y.float / 2
             ),
-            scale=scaleAdj
+            scale=scale
         )
