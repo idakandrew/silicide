@@ -6,7 +6,7 @@ if init() == 0:
     quit("Failed to Initialize GLFW.")
 
 windowHint(SAMPLES, 8)
-windowSize = ivec2(1000, 1000)
+windowSize = ivec2(1920, 1080)
 window = createWindow(windowSize.x, windowSize.y, "Silicide", nil, nil)
 
 makeContextCurrent(window)
@@ -43,12 +43,12 @@ var font = readFont("mont.otf")
 font.size = 100
 font.paint.color = color(0.5, 0.5, 0.5)
 
-proc loadFont*(bxy: Boxy) =
+proc loadFont(bxy: Boxy) =
     let text = toSeq ' '..'~'
 
     for c in text:
         let temp = font.typeset($c)
-        let image = newImage(temp.computeBounds.x.int, temp.computeBounds.y.int)
+        let image = newImage(temp.layoutBounds.x.int, temp.layoutBounds.y.int)
         image.fillText(temp)
 
         bxy.addImage($c, image)
@@ -58,17 +58,17 @@ bxy.loadFont()
 proc drawText*(bxy: Boxy, str: string, xpos, ypos: float, scale = vec2(1, 1)) =
     let chars = toSeq str
     let temp = font.typeset(str)
-    let width = temp.computeBounds.x.int
-    let height = temp.computeBounds.y.int
+    let width = temp.computeBounds.x
+    let height = temp.computeBounds.y
     let scaleAdj = vec2(scale.x * windowSize.x.float / 1920, scale.y * windowSize.y.float / 1080)
-    let xposAdj = xpos - width.float * scaleAdj.x / 2
+    let xposAdj = xpos - width * scaleAdj.x / 2
 
     for idx, c in chars:
         bxy.drawImCAST(
             $c, 
             vec2(
                 xposAdj + temp.positions[idx].x * scaleAdj.x + bxy.getImageSize($c).x.float * scaleAdj.x / 2, 
-                ypos - height.float * scaleAdj.y / 2 + bxy.getImageSize($c).y.float * scaleAdj.y / 2
+                ypos - height * scaleAdj.y / 2 + bxy.getImageSize($c).y.float * scaleAdj.y / 2
             ),
-            scale=scale
+            scale=scaleAdj
         )

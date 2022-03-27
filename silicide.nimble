@@ -8,7 +8,17 @@ srcDir        = "src"
 binDir        = "bin"
 bin           = @["silicide"]
 
-
 # Dependencies
 
-requires "nim >= 1.4.8"
+requires "nim >= 1.6.4"
+requires "boxy"
+requires "staticglfw"
+requires "pixie"
+requires "opengl"
+
+task dbg, "debugs":
+    exec "cd /src"
+    exec "c --outdir:bin silicide.nim"
+    exec "cd .."
+    exec "cd /bin"
+    exec "silicide.exe"
