@@ -1,12 +1,6 @@
 import 
-    boxy, opengl, staticglfw, pixie, 
+    boxy, opengl, staticglfw, 
     silicideData, silicideGraphics, silicideControls
-
-#------------------------------------------------------------------------------
-
-var xpos = 0.0
-var ypos = 0.0
-let windowScale = vec2(windowSize.x / 1920, windowSize.y / 1080)
 
 proc display() =
     bxy.saveTransform()
@@ -16,9 +10,12 @@ proc display() =
     glClearColor(0.125, 0.125, 0.125, 1)
     glClear(GL_COLOR_BUFFER_BIT)
 
-    window.getCursorPos(addr xpos, addr ypos)
+    window.getCrsPos()
 
-    bxy.drawText("Hello, world!", xpos, ypos)
+    for i in 1..30:
+        drawLine(vec2(-10, i.float*50), vec2(i.float*50, -10), color(1, 0, 0, 0.5))
+    
+    drawImCAST("crc", vec2(crsXPos, crsYPos), scale=vec2(0.2, 0.2))
 
     bxy.restoreTransform()
     bxy.endFrame()

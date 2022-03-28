@@ -1,8 +1,6 @@
 import 
-    staticglfw, 
+    staticglfw, vmath,
     silicideData
-
-var keyList*: array[KEY_LAST + 1, int]
 
 proc keyCallBack*(window: Window, key, scancode, action, mods: cint) {.cdecl.} =
     keyList[key] = action
@@ -13,3 +11,9 @@ proc keyCallBack*(window: Window, key, scancode, action, mods: cint) {.cdecl.} =
         ##
 
 discard setKeyCallback(window, keyCallBack)
+
+proc getCrsPos*(window: Window) =
+    window.getCursorPos(addr crsXPos, addr crsYPos)
+
+    crsXPos /= windowScale.x
+    crsYPos /= windowScale.y
