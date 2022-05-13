@@ -1,5 +1,5 @@
 import 
-    pixie, boxy, sequtils, opengl, staticglfw,
+    pixie, boxy, opengl, staticglfw,
     silicideData
 
 if init() == 0:
@@ -12,23 +12,35 @@ windowSize = ivec2(vidMode.width, vidMode.height)
 windowScale = vec2(vidMode.width / 1920, vidMode.height / 1080)
 
 makeContextCurrent(window)
+swapInterval(0) # must be after makeContextCurrent()
 loadExtensions()
-glDrawBuffer(GL_FRONT)
 
 bxy = newBoxy()
 bxy.addImage("sqr", readImage("square.png"))
+bxy.addImage("sqr2", readImage("square2.png"))
+
+#------------------------------------------------------------------------------
 
 proc genCircle(): Image =
+    ## Generates a white circle for insertion into boxy
+    ## 
     result = newImage(500, 500)
     let ctx = newContext(result)
-    ctx.fillStyle = rgba(255, 0, 0, 125)
+    ctx.fillStyle = rgba(0, 0, 0, 255)
+    ctx.fillCircle(circle(vec2(250, 250), 230))
+    ctx.fillStyle = rgba(255, 255, 255, 255)
     ctx.fillCircle(circle(vec2(250, 250), 200))
 
 bxy.addImage("crc", genCircle())
 
 #------------------------------------------------------------------------------
 
-## Draws image at center, rotated by angle, scaled by scale, tinted by tint.
+proc imScale*(key: string, size: Vec2): Vec2 =
+    ## Returns scale ratio for image to be resized to certain pixel size
+    ## 
+    let imageInfo = bxy.getImageSize(key)
+    result = vec2(size.x / imageInfo.x.float, size.y / imageInfo.y.float)
+
 proc drawImCAST*(
     key: string,
     center: Vec2,
@@ -36,6 +48,8 @@ proc drawImCAST*(
     scale = vec2(1, 1),
     tint = color(1, 1, 1, 1)
 ) =
+    ## Draws image at center, rotated by angle, scaled by scale, tinted by tint.
+    ## 
     let imageInfo = bxy.getImageSize(key)
 
     bxy.saveTransform()
@@ -69,35 +83,56 @@ proc drawLine*(
 
 var font = readFont("mont.otf")
 font.size = 100
-font.paint.color = color(0.5, 0.5, 0.5)
+font.paint.color = color(1, 1, 1)
+
+# remove eventually
+proc saveText*() =
+    let temp = font.typeset("silic.ide")
+    let image = newImage(temp.layoutBounds.x.int, temp.layoutBounds.y.int)
+    image.fillText(temp)
+    image.writeFile("test.png")
 
 proc loadFont() =
-    let glyphs = toSeq ' '..'~'
+    ## Load font glyph images into boxy
+    ## 
+    let glyphs = {' '..'~'} # faster than seq since no repetition
 
-    for c in glyphs:
-        let cArng = font.typeset($c)
-        let image = newImage(cArng.layoutBounds.x.int, cArng.layoutBounds.y.int)
-        image.fillText(cArng)
+    for glyph in glyphs:
+        let glyArng = font.typeset($glyph)
+        let image = newImage(glyArng.layoutBounds.x.int, glyArng.layoutBounds.y.int)
+        image.fillText(glyArng)
 
-        bxy.addImage($c, image)
+        bxy.addImage($glyph, image)
 
 loadFont()
 
-proc drawText*(str: string, xpos, ypos: float, scale = vec2(1, 1)) =
-    let chars = toSeq str
-    let strArng = font.typeset(str)
-    let width = strArng.layoutBounds.x
-    let height = strArng.layoutBounds.y
-    let xposAdj = xpos - width / 2
+proc drawText*(
+    str: string,
+    xPos, yPos: float, 
+    scale: float32 = 1.0, 
+    tint = color(1, 1, 1),
+    hAlign = CenterAlign
+) =
+    let chars = @str
 
-    for idx, c in chars:
+    font.size *= scale
+    let strArng = font.typeset(str, hAlign=hAlign)
+    font.size /= scale
+
+    let height = strArng.layoutBounds.y
+
+    for idx, c in chars: 
         drawImCAST(
             $c, 
             vec2(
-                xposAdj + strArng.positions[idx].x + bxy.getImageSize($c).x.float / 2, 
-                ypos - height / 2 + bxy.getImageSize($c).y.float / 2
+                xPos + strArng.positions[idx].x + bxy.getImageSize($c).x.float * scale / 2, 
+                yPos - height / 2 + bxy.getImageSize($c).y.float * scale / 2
             ),
-            scale=scale
+            scale=vec2(scale, scale)
         )
 
 #------------------------------------------------------------------------------
+
+proc debugMenu*() =
+    drawText("Observed sleep: " & $round(observed * 1e3, 2) & "ms", 50, 50, 0.5, hAlign=LeftAlign)
+    drawText("Sleep estimate: " & $round(estimate * 1e3, 2) & "ms", 50, 125, 0.5, hAlign=LeftAlign)

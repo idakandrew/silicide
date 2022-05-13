@@ -8,7 +8,10 @@ proc keyCallBack*(window: Window, key, scancode, action, mods: cint) {.cdecl.} =
     if keyList[KEY_ESCAPE] == PRESS: 
         setWindowShouldClose(window, 1)
     if keyList[KEY_SPACE] == PRESS:
-        ##
+        lastClicked = 100
+    if keyList[KEY_TAB] == PRESS:
+        showDebug = not showDebug
+
 
 discard setKeyCallback(window, keyCallBack)
 
