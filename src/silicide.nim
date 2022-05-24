@@ -6,8 +6,6 @@ when defined(windows):
     import winim/inc/mmsystem
 
 var frame = 0.0
-var lastTime = getTime().float
-var nextTime = 0.0
 var targetFPS = 120.0
 
 #------------------------------------------------------------------------------
@@ -22,16 +20,23 @@ proc display() =
 
     window.getCrsPos()
 
-    drawImCAST("sqr", vec2(580, 400), scale=imScale("sqr", vec2(70, 70)), tint=PTS_CLR)
-    drawImCAST("sqr", vec2(680, 400), scale=imScale("sqr", vec2(70, 70)), tint=color(0, 0.7, 0, 0.4))
+    drawImCst("sqr", vec2(580, 400), scalePx=vec2(70, 70), tint=PTS_HI)
+    drawImCst("sqr", vec2(680, 400), scalePx=vec2(70, 70), tint=PTS_LO)
 
-    drawImCAST("sqr", vec2(580, 500), scale=imScale("sqr", vec2(70, 70)), tint=NTS_CLR)
-    drawImCAST("sqr", vec2(680, 500), scale=imScale("sqr", vec2(70, 70)), tint=color(0.2, 0.4, 1, 0.4))
+    drawImCst("sqr", vec2(580, 500), scalePx=vec2(70, 70), tint=NTS_HI)
+    drawImCst("sqr", vec2(680, 500), scalePx=vec2(70, 70), tint=NTS_LO)
 
-    drawImCAST("sqr", vec2(crsXPos-100, crsYPos), scale=imScale("sqr", vec2(40, 40)), tint=MET_CLR)
-    drawImCAST("sqr", vec2(crsXPos, crsYPos), scale=imScale("sqr", vec2(40, 40)), tint=color(0.5, 0.5, 0.5, 0.5))
+    drawImCst("sqr", vec2(900, 400), scalePx=vec2(200, 70), tint=PTS_HI)
 
-    # drawImCAST("sqr", vec2(500, 500), scale=imScale("sqr", vec2(30, 30)), tint=VIA_CLR)
+    drawImCst("sqr", vec2(900, 330), scalePx=vec2(70, 70), tint=NTS_LO)
+    drawImCst("sqr", vec2(900, 365), scalePx=vec2(70, 80), angle=45, opOrder=RotFirst, tint=NTS_LO)
+    drawImCst("sqr", vec2(900, 400), scalePx=vec2(35, 70), tint=NTS_LO)
+
+    drawImCst("sqr", vec2(crsXPos-100, crsYPos), scalePx=vec2(40, 40), tint=MET_HI)
+    drawImCst("sqr", vec2(crsXPos, crsYPos), scalePx=vec2(40, 40), tint=MET_LO)
+
+    drawImCst("crcBrd", vec2(680, 400), scalePx=vec2(30, 30), tint=VIA_HI)
+    drawImCst("crcBrd", vec2(680, 500), scalePx=vec2(30, 30), tint=VIA_LO)
 
     if showDebug:
         debugMenu()
@@ -47,20 +52,22 @@ when defined(windows):
     timeBeginPeriod(1)
 
 while windowShouldClose(window) != 1:
+    var frameStart = getTime().float
+    var expectFrameEnd = frameStart + 1.0/targetFPS
+
     pollEvents()
 
     display()
 
-    nextTime = lastTime + 1.0/targetFPS
+    var now = getTime().float
 
-    if getTime().float < nextTime:
-        hybridSleep(nextTime - lastTime)
+    if now < expectFrameEnd:
+        hybridSleep(expectFrameEnd - now)
     else:
-        nextTime = getTime()
-
-    lastTime = nextTime
+        inc skippedSyncs
 
     frame += 1
+    frameTime = getTime().float - frameStart
 
 when defined(windows):
     timeEndPeriod(1)

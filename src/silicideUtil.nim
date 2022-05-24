@@ -6,6 +6,7 @@ var mean = 1e-3
 var m2 = 0.0
 var count = 1.0
 
+# Figure out why sleep estimate sticks a little too high
 proc hybridSleep*(secs: float) =
     var localSecs = secs
 

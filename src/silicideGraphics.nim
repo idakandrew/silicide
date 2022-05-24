@@ -17,45 +17,51 @@ loadExtensions()
 
 bxy = newBoxy()
 bxy.addImage("sqr", readImage("square.png"))
-bxy.addImage("sqr2", readImage("square2.png"))
-
-#------------------------------------------------------------------------------
-
-proc genCircle(): Image =
-    ## Generates a white circle for insertion into boxy
-    ## 
-    result = newImage(500, 500)
-    let ctx = newContext(result)
-    ctx.fillStyle = rgba(0, 0, 0, 255)
-    ctx.fillCircle(circle(vec2(250, 250), 230))
-    ctx.fillStyle = rgba(255, 255, 255, 255)
-    ctx.fillCircle(circle(vec2(250, 250), 200))
-
-bxy.addImage("crc", genCircle())
+bxy.addImage("crc", readImage("circle.png"))
+bxy.addImage("crcBrd", readImage("circleBorder.png"))
 
 #------------------------------------------------------------------------------
 
 proc imScale*(key: string, size: Vec2): Vec2 =
     ## Returns scale ratio for image to be resized to certain pixel size
-    ## 
+
     let imageInfo = bxy.getImageSize(key)
     result = vec2(size.x / imageInfo.x.float, size.y / imageInfo.y.float)
 
-proc drawImCAST*(
+proc drawImCst*(
     key: string,
     center: Vec2,
     angle = 0.0,
-    scale = vec2(1, 1),
-    tint = color(1, 1, 1, 1)
+    scalePx = vec2(100, 100),
+    tint = color(1, 1, 1, 1),
+    opOrder = SclFirst
 ) =
-    ## Draws image at center, rotated by angle, scaled by scale, tinted by tint.
-    ## 
+    ## Draws image at center, rotated by angle degrees, scaled to ScalePx pixels, tinted by tint
+
+    let scaleRatio = imScale(key, scalePx)
     let imageInfo = bxy.getImageSize(key)
+    let angleRad = angle * PI / 180
 
     bxy.saveTransform()
     bxy.translate(center)
-    bxy.rotate(angle)
-    bxy.scale(scale)
+
+    if opOrder == RotFirst:
+        bxy.scale(
+            scaleRatio / imScale(
+                key,
+                vec2(
+                    abs(imageInfo.x.float * sin(angleRad)) + abs(imageInfo.y.float * cos(angleRad)),
+                    abs(imageInfo.x.float * cos(angleRad)) + abs(imageInfo.y.float * sin(angleRad))
+                )
+                
+            )
+        )
+
+    bxy.rotate(angleRad)
+
+    if opOrder == SclFirst:
+        bxy.scale(scaleRatio)
+
     bxy.translate(-imageInfo.vec2 / 2)
     bxy.drawImage(key, pos = vec2(0, 0), tintColor = tint)
     bxy.restoreTransform()
@@ -94,7 +100,7 @@ proc saveText*() =
 
 proc loadFont() =
     ## Load font glyph images into boxy
-    ## 
+
     let glyphs = {' '..'~'} # faster than seq since no repetition
 
     for glyph in glyphs:
@@ -109,30 +115,40 @@ loadFont()
 proc drawText*(
     str: string,
     xPos, yPos: float, 
-    scale: float32 = 1.0, 
+    heightPx = 100.0, 
     tint = color(1, 1, 1),
     hAlign = CenterAlign
 ) =
     let chars = @str
+    let scale = heightPx / font.size
+    let fontSave = font.size
 
     font.size *= scale
     let strArng = font.typeset(str, hAlign=hAlign)
-    font.size /= scale
+    font.size = fontSave
 
     let height = strArng.layoutBounds.y
 
-    for idx, c in chars: 
-        drawImCAST(
-            $c, 
+    for idx, c in chars:
+        let charStr = $c
+        let imgSize = bxy.getImageSize(charStr)
+        let scaledGlyphWidth = imgSize.x.float * scale
+
+        drawImCst(
+            charStr, 
             vec2(
-                xPos + strArng.positions[idx].x + bxy.getImageSize($c).x.float * scale / 2, 
-                yPos - height / 2 + bxy.getImageSize($c).y.float * scale / 2
+                xPos + strArng.positions[idx].x + scaledGlyphWidth / 2, 
+                yPos - height / 2 + imgSize.y.float * scale / 2
             ),
-            scale=vec2(scale, scale)
+            scalePx=vec2(scaledGlyphWidth, height)
         )
 
 #------------------------------------------------------------------------------
 
 proc debugMenu*() =
-    drawText("Observed sleep: " & $round(observed * 1e3, 2) & "ms", 50, 50, 0.5, hAlign=LeftAlign)
-    drawText("Sleep estimate: " & $round(estimate * 1e3, 2) & "ms", 50, 125, 0.5, hAlign=LeftAlign)
+    ## Draw debug info
+    
+    drawText("Frame Time: " & ($(frameTime * 1e3))[0..4] & "ms", 50, 50, 35, hAlign=LeftAlign)
+    drawText("Skipped Syncs: " & $skippedSyncs, 50, 100, 35, hAlign=LeftAlign)
+    drawText("Observed sleep: " & $round(observed * 1e3, 2) & "ms", 50, 150, 35, hAlign=LeftAlign)
+    drawText("Sleep estimate: " & $round(estimate * 1e3, 2) & "ms", 50, 200, 35, hAlign=LeftAlign)
