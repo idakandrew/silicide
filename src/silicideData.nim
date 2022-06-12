@@ -1,4 +1,6 @@
-import staticglfw, boxy
+import staticglfw, boxy, std/tables
+
+export tables
 
 # main
 #------------------------------------------------------------------------------
@@ -25,19 +27,40 @@ let MET_LO* = color(0.5, 0.5, 0.5, 0.5)
 let VIA_HI* = color(0.35, 0.35, 0.35, 0.5)
 let VIA_LO* = color(0.9, 0.9, 0.9, 0.5)
 
-type RotateScaleOrder* = enum
-    RotFirst, SclFirst
+# sim
+#------------------------------------------------------------------------------
+
+type Element* = enum
+    None, Nts, Pts, Met, Via
+
+type Component* = object
+    elem*: Element
+    activ*: bool
+    nghbrs*: int
+
+var map* = initTable[IVec2, Component]()
 
 # controls
 #------------------------------------------------------------------------------
 
-var crsXPos* = 0.0
-var crsYPos* = 0.0
+# screen pos
+var crsScrnX* = 0.0
+var crsScrnY* = 0.0
+
+var crsScrnSnapX* = 0
+var crsScrnSnapY* = 0
+
+# world coords
+var crsMapX*: int32 = 0
+var crsMapY*: int32 = 0
+
+var mapX*: int32 = 0
+var mapY*: int32 = 0
 
 var keyList*: array[KEY_LAST + 1, int]
 var mouseBtns*: array[MOUSE_BUTTON_LAST + 1, int]
 
-var lastClicked* = 0
+var selectedElem* = None
 
 var showDebug* = false
 

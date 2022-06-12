@@ -18,8 +18,9 @@ loadExtensions()
 bxy = newBoxy()
 bxy.addImage("sqr", readImage("square.png"))
 bxy.addImage("crc", readImage("circle.png"))
-bxy.addImage("crcBrd", readImage("circleBorder.png"))
+bxy.addImage("crcBrdr", readImage("circleBorder.png"))
 
+# general drawing
 #------------------------------------------------------------------------------
 
 proc imScale*(key: string, size: Vec2): Vec2 =
@@ -28,13 +29,13 @@ proc imScale*(key: string, size: Vec2): Vec2 =
     let imageInfo = bxy.getImageSize(key)
     result = vec2(size.x / imageInfo.x.float, size.y / imageInfo.y.float)
 
-proc drawImCst*(
+proc drawImCstm*(
     key: string,
     center: Vec2,
     angle = 0.0,
     scalePx = vec2(100, 100),
     tint = color(1, 1, 1, 1),
-    opOrder = SclFirst
+    rotFirst = false
 ) =
     ## Draws image at center, rotated by angle degrees, scaled to ScalePx pixels, tinted by tint
 
@@ -45,7 +46,7 @@ proc drawImCst*(
     bxy.saveTransform()
     bxy.translate(center)
 
-    if opOrder == RotFirst:
+    if rotFirst:
         bxy.scale(
             scaleRatio / imScale(
                 key,
@@ -59,7 +60,7 @@ proc drawImCst*(
 
     bxy.rotate(angleRad)
 
-    if opOrder == SclFirst:
+    if not rotFirst:
         bxy.scale(scaleRatio)
 
     bxy.translate(-imageInfo.vec2 / 2)
@@ -85,6 +86,7 @@ proc drawLine*(
     bxy.drawImage(key, pos = vec2(0, 0), tintColor = tint)
     bxy.restoreTransform()
 
+# text drawing
 #------------------------------------------------------------------------------
 
 var font = readFont("mont.otf")
@@ -134,7 +136,7 @@ proc drawText*(
         let imgSize = bxy.getImageSize(charStr)
         let scaledGlyphWidth = imgSize.x.float * scale
 
-        drawImCst(
+        drawImCstm(
             charStr, 
             vec2(
                 xPos + strArng.positions[idx].x + scaledGlyphWidth / 2, 
@@ -143,12 +145,24 @@ proc drawText*(
             scalePx=vec2(scaledGlyphWidth, height)
         )
 
+# map drawing
+#------------------------------------------------------------------------------
+
+proc drawMap*() =
+    for key, val in pairs(map):
+        if key.x in mapX..(mapX + 1920) and key.y in mapY..(mapY + 1080):
+            drawImCstm("sqr", key.vec2 - vec2(mapX.float, mapY.float), scalePx=vec2(60, 60), tint=PTS_HI)
+
+# other
 #------------------------------------------------------------------------------
 
 proc debugMenu*() =
     ## Draw debug info
     
-    drawText("Frame Time: " & ($(frameTime * 1e3))[0..4] & "ms", 50, 50, 35, hAlign=LeftAlign)
-    drawText("Skipped Syncs: " & $skippedSyncs, 50, 100, 35, hAlign=LeftAlign)
+    drawText("Frame time: " & ($(frameTime * 1e3))[0..4] & "ms", 50, 50, 35, hAlign=LeftAlign)
+    drawText("Skipped syncs: " & $skippedSyncs, 50, 100, 35, hAlign=LeftAlign)
     drawText("Observed sleep: " & $round(observed * 1e3, 2) & "ms", 50, 150, 35, hAlign=LeftAlign)
     drawText("Sleep estimate: " & $round(estimate * 1e3, 2) & "ms", 50, 200, 35, hAlign=LeftAlign)
+    drawText("crsScrnPos: " & $crsScrnX & " | " & $crsScrnY, 50, 250, 35, hAlign=LeftAlign)
+    drawText("mapPos: " & $mapX & " | " & $mapY, 50, 300, 35, hAlign=LeftAlign)
+    drawText("crsMapPos: " & $crsMapX & " | " & $crsMapY, 50, 350, 35, hAlign=LeftAlign)
